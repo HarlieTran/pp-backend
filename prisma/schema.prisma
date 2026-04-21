@@ -1,0 +1,216 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── User ────────────────────────────────────
+
+model UserProfile {
+  id                  String                 @id @default(uuid())
+  authProvider        String                 @default("cognito")
+  authSubject         String
+  email               String
+  firstName           String?
+  lastName            String?
+  displayName         String?
+  onboardingCompleted Boolean                @default(false)
+  answers             UserAnswer[]
+  savedRecipes        SavedRecipe[]
+  mealPlanItems       MealPlanItem[]
+  preferenceProfile   UserPreferenceProfile?
+  pantryItems         PantryItem[]
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+
+  @@unique([authProvider, authSubject])
+  @@map("user_profiles")
+}
+
+// ─── Onboarding ──────────────────────────────
+
+model Question {
+  id         String           @id @default(uuid())
+  key        String           @unique
+  label      String
+  type       QuestionType
+  isRequired Boolean          @default(false)
+  sortOrder  Int              @default(0)
+  isActive   Boolean          @default(true)
+  options    QuestionOption[]
+  answers    UserAnswer[]
+
+  @@map("questions")
+}
+
+model QuestionOption {
+  id         String       @id @default(uuid())
+  questionId String
+  value      String
+  label      String
+  sortOrder  Int          @default(0)
+  isActive   Boolean      @default(true)
+  question   Question     @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answers    UserAnswer[]
+
+  @@unique([questionId, value])
+  @@map("question_options")
+}
+
+model UserAnswer {
+  id         String          @id @default(uuid())
+  userId     String
+  questionId String
+  optionId   String?
+  answerText String?
+  user       UserProfile     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question   Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  option     QuestionOption? @relation(fields: [optionId], references: [id], onDelete: SetNull)
+
+  @@map("user_answers")
+}
+
+enum QuestionType {
+  SINGLE_CHOICE
+  MULTI_CHOICE
+  FREE_TEXT
+}
+
+// ─── Preferences ─────────────────────────────
+
+model UserPreferenceProfile {
+  id             String      @id @default(uuid())
+  userId         String      @unique
+  likes          Json
+  dislikes       Json
+  dietSignals    Json
+  confidence     Json
+  rawModelOutput Json
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  user           UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preference_profiles")
+}
+
+// ─── Ingredients ─────────────────────────────
+
+model Ingredient {
+  id            String              @id @default(uuid())
+  canonicalName String              @unique
+  aliases       Json                @default("[]")
+  category      IngredientCategory?
+  isActive      Boolean             @default(true)
+  pantryItems   PantryItem[]
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([canonicalName])
+  @@map("ingredients")
+}
+
+enum IngredientCategory {
+  produce
+  dairy
+  meat
+  seafood
+  grains
+  spices
+  condiments
+  frozen
+  beverages
+  snacks
+  other
+}
+
+// ─── Pantry ──────────────────────────────────
+
+model PantryItem {
+  id            String      @id @default(cuid())
+  userProfileId String
+  rawName       String
+  canonicalName String
+  ingredientId  String?
+  category      String
+  quantity      Float       @default(1)
+  unit          String      @default("")
+  notes         String?
+  expiryDate    String? // YYYY-MM-DD
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  ingredient    Ingredient? @relation(fields: [ingredientId], references: [id])
+
+  @@index([userProfileId])
+  @@index([userProfileId, expiryDate])
+  @@map("pantry_items")
+}
+
+// ─── Recipes ─────────────────────────────────
+
+model Recipe {
+  id             Int                @id
+  title          String
+  image          String?
+  imageSourceUrl String?
+  cuisine        String[]
+  dietTags       String[]
+  readyMinutes   Int?
+  servings       Int?
+  sourceUrl      String?
+  summary        String?
+  instructions   Json?
+  rawData        Json
+  cachedAt       DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  ingredients    RecipeIngredient[]
+  savedBy        SavedRecipe[]
+  mealPlanItems  MealPlanItem[]
+
+  @@map("recipes")
+}
+
+model RecipeIngredient {
+  id            String  @id @default(uuid())
+  recipeId      Int
+  canonicalName String
+  rawName       String
+  amount        Float?
+  unit          String?
+  recipe        Recipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId])
+  @@index([canonicalName])
+  @@map("recipe_ingredients")
+}
+
+model SavedRecipe {
+  id        String      @id @default(uuid())
+  userId    String
+  recipeId  Int
+  createdAt DateTime    @default(now())
+  user      UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe    Recipe      @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, recipeId])
+  @@index([userId])
+  @@map("saved_recipes")
+}
+
+model MealPlanItem {
+  id        String      @id @default(uuid())
+  userId    String
+  recipeId  Int
+  date      String?
+  createdAt DateTime    @default(now())
+  user      UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe    Recipe      @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, recipeId])
+  @@index([userId])
+  @@map("meal_plan_items")
+}

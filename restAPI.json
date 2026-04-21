@@ -1,0 +1,600 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "PantryPal API",
+    "version": "0.1.0",
+    "description": "API documentation for the PantryPal backend."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8788",
+      "description": "Local environment"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "tags": ["Users"],
+        "security": [],
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/me/bootstrap": {
+      "post": {
+        "summary": "Bootstrap user data",
+        "tags": ["Users"],
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/me/profile": {
+      "get": {
+        "summary": "Get user profile",
+        "tags": ["Users"],
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      },
+      "patch": {
+        "summary": "Update user profile",
+        "tags": ["Users"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "displayName": { "type": "string" },
+                  "likes": { "type": "string" },
+                  "dietType": { "type": "array", "items": { "type": "string" } },
+                  "allergies": { "type": "array", "items": { "type": "string" } },
+                  "disliked": { "type": "string" },
+                  "notes": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/onboarding/questions": {
+      "get": {
+        "summary": "Get onboarding questions",
+        "tags": ["Onboarding"],
+        "security": [],
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/me/answers": {
+      "put": {
+        "summary": "Save onboarding answers",
+        "tags": ["Onboarding"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "answers": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "questionKey": { "type": "string" },
+                        "optionValues": { "type": "array", "items": { "type": "string" } },
+                        "answerText": { "type": "string" }
+                      },
+                      "required": ["questionKey"]
+                    }
+                  }
+                },
+                "required": ["answers"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/me/onboarding/complete": {
+      "post": {
+        "summary": "Complete onboarding",
+        "tags": ["Onboarding"],
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/me/pantry": {
+      "get": {
+        "summary": "Get user pantry",
+        "tags": ["Pantry"],
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      },
+      "post": {
+        "summary": "Add item to pantry",
+        "tags": ["Pantry"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rawName": { "type": "string" },
+                  "quantity": { "type": "number" },
+                  "unit": { "type": "string" },
+                  "expiryDate": { "type": "string", "example": "2024-12-31" },
+                  "notes": { "type": "string" }
+                },
+                "required": ["rawName", "quantity", "unit"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created" }
+        }
+      }
+    },
+    "/me/pantry/{id}": {
+      "patch": {
+        "summary": "Update pantry item",
+        "tags": ["Pantry"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quantity": { "type": "number" },
+                  "unit": { "type": "string" },
+                  "expiryDate": { "type": "string", "nullable": true },
+                  "notes": { "type": "string", "nullable": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      },
+      "delete": {
+        "summary": "Delete pantry item",
+        "tags": ["Pantry"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/me/pantry/upload-url": {
+      "post": {
+        "summary": "Get upload URL for pantry receipt",
+        "tags": ["Pantry"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "filename": { "type": "string" },
+                  "contentType": { "type": "string" }
+                },
+                "required": ["filename", "contentType"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/me/pantry/parse-image": {
+      "post": {
+        "summary": "Parse receipt image",
+        "tags": ["Pantry"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "imageKey": { "type": "string" }
+                },
+                "required": ["imageKey"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/me/pantry/items/bulk": {
+      "post": {
+        "summary": "Bulk add pantry items",
+        "tags": ["Pantry"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "rawName": { "type": "string" },
+                        "quantity": { "type": "number" },
+                        "unit": { "type": "string" },
+                        "expiryDate": { "type": "string" },
+                        "notes": { "type": "string" }
+                      },
+                      "required": ["rawName", "quantity", "unit"]
+                    }
+                  }
+                },
+                "required": ["items"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created" }
+        }
+      }
+    },
+    "/recipes/saved": {
+      "get": {
+        "summary": "Get saved recipes",
+        "tags": ["Recipes"],
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/recipes/suggestions": {
+      "post": {
+        "summary": "Get recipe suggestions",
+        "tags": ["Recipes"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "limit": { "type": "integer", "default": 12 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/recipes/search": {
+      "get": {
+        "summary": "Search recipes",
+        "tags": ["Recipes"],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/recipes/{id}": {
+      "get": {
+        "summary": "Get recipe by ID",
+        "tags": ["Recipes"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "OK" },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/recipes/from-name": {
+      "post": {
+        "summary": "Generate recipe from name",
+        "tags": ["Recipes"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "targetServings": { "type": "integer", "default": 4 }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/recipes/generate-list": {
+      "post": {
+        "summary": "Generate shopping list from recipe",
+        "tags": ["Recipes"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ingredients": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": { "type": "string" },
+                        "quantity": { "type": "string" }
+                      },
+                      "required": ["name"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/recipes/generate-image": {
+      "post": {
+        "summary": "Generate recipe image",
+        "tags": ["Recipes"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" }
+                },
+                "required": ["title", "description"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/recipes/{id}/save": {
+      "post": {
+        "summary": "Save a recipe",
+        "tags": ["Recipes"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/recipes/cook": {
+      "post": {
+        "summary": "Mark recipe as cooked",
+        "tags": ["Recipes"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "recipeId": { "type": "integer" },
+                  "ingredients": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": { "type": "string" },
+                        "amount": { "type": "number" },
+                        "unit": { "type": "string" }
+                      },
+                      "required": ["name"]
+                    }
+                  },
+                  "servingsUsed": { "type": "number" },
+                  "dryRun": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/meal-plan": {
+      "get": {
+        "summary": "Get meal plan",
+        "tags": ["Meal Plan"],
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      },
+      "delete": {
+        "summary": "Clear meal plan",
+        "tags": ["Meal Plan"],
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/meal-plan/ai": {
+      "post": {
+        "summary": "Generate AI meal plan",
+        "tags": ["Meal Plan"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "servings": { "type": ["string", "number"] },
+                  "estimatedTime": { "type": "string" },
+                  "finalDish": { "type": "string" },
+                  "imageUrl": { "type": "string" },
+                  "instructions": { "type": "array", "items": { "type": "string" } },
+                  "ingredients": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": { "type": "string" },
+                        "quantity": { "type": "string" }
+                      },
+                      "required": ["name"]
+                    }
+                  }
+                },
+                "required": ["title"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/meal-plan/{id}": {
+      "post": {
+        "summary": "Add to meal plan",
+        "tags": ["Meal Plan"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "date": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      },
+      "delete": {
+        "summary": "Remove from meal plan",
+        "tags": ["Meal Plan"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    }
+  }
+}
