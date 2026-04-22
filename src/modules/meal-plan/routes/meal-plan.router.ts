@@ -11,6 +11,11 @@ import {
   clearMealPlanForUser,
   saveAiRecipeToMealPlan
 } from "../services/meal-plan.service.js";
+import {
+  getNotesForUser,
+  upsertNote,
+  deleteNote
+} from "../services/note.service.js";
 
 export const mealPlanRouter = Router();
 
@@ -109,6 +114,63 @@ mealPlanRouter.delete("/meal-plan", requireAuth, async (req, res) => {
     if (!user) { badRequest(res, "User not found"); return; }
     
     await clearMealPlanForUser(user.id);
+    ok(res, { success: true });
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+/* ══════════════════════════════════════════════
+   Planner Notes
+   ══════════════════════════════════════════════ */
+
+/* ── GET /planner-notes ─────────────────────── */
+
+mealPlanRouter.get("/planner-notes", requireAuth, async (req, res) => {
+  try {
+    const { auth } = req as AuthenticatedRequest;
+    const user = await findUserBySubject(auth.sub);
+    if (!user) { badRequest(res, "User not found"); return; }
+
+    const notes = await getNotesForUser(user.id);
+    ok(res, notes);
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+/* ── PUT /planner-notes/:date ────────────────── */
+
+const noteSchema = z.object({
+  text: z.string().min(1),
+});
+
+mealPlanRouter.put("/planner-notes/:date", requireAuth, async (req, res) => {
+  try {
+    const { auth } = req as AuthenticatedRequest;
+    const user = await findUserBySubject(auth.sub);
+    if (!user) { badRequest(res, "User not found"); return; }
+
+    const date = req.params.date; // YYYY-MM-DD
+    const { text } = parseBody(req.body, noteSchema);
+
+    await upsertNote(user.id, date, text);
+    ok(res, { success: true });
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+/* ── DELETE /planner-notes/:date ──────────────── */
+
+mealPlanRouter.delete("/planner-notes/:date", requireAuth, async (req, res) => {
+  try {
+    const { auth } = req as AuthenticatedRequest;
+    const user = await findUserBySubject(auth.sub);
+    if (!user) { badRequest(res, "User not found"); return; }
+
+    const date = req.params.date;
+    await deleteNote(user.id, date);
     ok(res, { success: true });
   } catch (err) {
     handleError(res, err);

@@ -26,6 +26,7 @@ export async function getMealPlanForUser(userId: string) {
       image: r.image ?? "",
       sourceType: r.id > 1500000000 ? "ai" : "spoonacular",
       date: item.date,
+      readyInMinutes: r.readyMinutes,
       requiredIngredients: r.ingredients.map(ing => ({
         name: ing.canonicalName,
         quantity: ing.amount ? `${ing.amount} ${ing.unit || ""}`.trim() : ""

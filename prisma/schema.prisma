@@ -22,6 +22,7 @@ model UserProfile {
   answers             UserAnswer[]
   savedRecipes        SavedRecipe[]
   mealPlanItems       MealPlanItem[]
+  plannerNotes        PlannerNote[]
   preferenceProfile   UserPreferenceProfile?
   pantryItems         PantryItem[]
   createdAt           DateTime               @default(now())
@@ -213,4 +214,20 @@ model MealPlanItem {
   @@unique([userId, recipeId])
   @@index([userId])
   @@map("meal_plan_items")
+}
+
+// ─── Planner Notes ───────────────────────────
+
+model PlannerNote {
+  id        String      @id @default(uuid())
+  userId    String
+  date      String      // YYYY-MM-DD
+  text      String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  user      UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@map("planner_notes")
 }
