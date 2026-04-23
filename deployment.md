@@ -51,6 +51,21 @@ If you ever need to completely destroy the AWS infrastructure (warning: this del
 ```bash
 npm run destroy
 ```
+To perform a "dry run" and see what would be destroyed without actually deleting anything:
+```bash
+npm run destroy:check
+```
+To bypass the safety confirmation prompt and force deletion:
+```bash
+npm run destroy:force
+```
+
+### Cleanup Operations
+To remove the generated `dist/` folder and clean up Terraform caches:
+```bash
+npm run cleanup
+```
+*(Use `npm run cleanup:local` to only clean the `dist/` folder without touching Terraform).*
 
 ## Summary Checklist for Updates
 1. Write/edit code in `src/`.
