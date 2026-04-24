@@ -105,11 +105,20 @@ export async function cookRecipeForUser(
     factor = recipe.servings && recipe.servings > 0 ? servingsUsed / recipe.servings : servingsUsed;
     
     const ext = recipe.extendedIngredients ?? [];
-    ingredientsToCook = ext.map((ing: any) => ({
-      name: ing.name ?? ing.original ?? "",
-      amount: ing.amount,
-      unit: ing.unit,
-    }));
+    if (ext.length > 0) {
+      ingredientsToCook = ext.map((ing: any) => ({
+        name: ing.name ?? ing.original ?? "",
+        amount: ing.amount,
+        unit: ing.unit,
+      }));
+    } else if (recipe.ingredients) {
+      // Fallback for AI generated recipes that only have ingredients
+      ingredientsToCook = recipe.ingredients.map((ing: any) => ({
+        name: ing.name ?? ing.rawName ?? "",
+        amount: ing.amount,
+        unit: ing.unit,
+      }));
+    }
   } else if (request.ingredients) {
     ingredientsToCook = request.ingredients;
     // For manual list, we assume factor is 1 because the user specifies the exact ingredients for their serving

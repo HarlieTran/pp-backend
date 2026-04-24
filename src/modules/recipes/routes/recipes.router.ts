@@ -31,6 +31,7 @@ recipesRouter.get("/recipes/saved", requireAuth, async (req, res) => {
 
 const suggestionsSchema = z.object({
   limit: z.number().int().min(1).max(30).optional().default(12),
+  filter: z.string().optional(),
 });
 
 recipesRouter.post("/recipes/suggestions", requireAuth, async (req, res) => {
@@ -38,8 +39,8 @@ recipesRouter.post("/recipes/suggestions", requireAuth, async (req, res) => {
     const { auth } = req as AuthenticatedRequest;
     const user = await findUserBySubject(auth.sub);
     if (!user) { badRequest(res, "User not found"); return; }
-    const { limit } = parseBody(req.body, suggestionsSchema);
-    const result = await getRecipeSuggestionsForUser(user.id, limit);
+    const { limit, filter } = parseBody(req.body, suggestionsSchema);
+    const result = await getRecipeSuggestionsForUser(user.id, limit, filter);
     ok(res, result);
   } catch (err) {
     handleError(res, err);
@@ -81,12 +82,14 @@ recipesRouter.get("/recipes/:id", requireAuth, async (req, res) => {
 const fromNameSchema = z.object({
   name: z.string().min(1).max(200),
   targetServings: z.number().int().min(1).max(20).optional().default(4),
+  imageUrl: z.string().url().optional(),
+  ingredientHint: z.array(z.string()).optional(),
 });
 
 recipesRouter.post("/recipes/from-name", requireAuth, async (req, res) => {
   try {
-    const { name, targetServings } = parseBody(req.body, fromNameSchema);
-    const recipe = await generateAndSaveRecipe(name, targetServings);
+    const { name, targetServings, imageUrl, ingredientHint } = parseBody(req.body, fromNameSchema);
+    const recipe = await generateAndSaveRecipe(name, targetServings, imageUrl, ingredientHint);
     ok(res, recipe);
   } catch (err) {
     handleError(res, err);

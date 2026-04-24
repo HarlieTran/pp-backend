@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../../common/db/prisma.js";
 import { computeExpiryStatus } from "../../pantry/model/pantry.types.js";
-import { findRecipesByIngredients, getRecipeInformation } from "./spoonacular.service.js";
+import { findRecipesByIngredients, findRecipesComplex, getRecipeInformation } from "./spoonacular.service.js";
 
 /* ──────────────────────────────────────────────
    getRecipeSuggestionsForUser
@@ -9,7 +9,7 @@ import { findRecipesByIngredients, getRecipeInformation } from "./spoonacular.se
    scored by expiry urgency + pantry match count
    ────────────────────────────────────────────── */
 
-export async function getRecipeSuggestionsForUser(userProfileId: string, limit: number = 12) {
+export async function getRecipeSuggestionsForUser(userProfileId: string, limit: number = 12, filter?: string) {
   // 1. Load pantry items
   const pantryItems = await prisma.pantryItem.findMany({
     where: { userProfileId },
@@ -26,7 +26,15 @@ export async function getRecipeSuggestionsForUser(userProfileId: string, limit: 
   }
 
   // 4. Call Spoonacular
-  const spoonacularResults = await findRecipesByIngredients(ingredientNames, limit);
+  let spoonacularResults;
+  if (filter && filter !== 'All') {
+    spoonacularResults = await findRecipesComplex(ingredientNames, limit, filter);
+    if (filter === "Ready to cook") {
+      spoonacularResults = spoonacularResults.filter(r => r.missedIngredientCount === 0);
+    }
+  } else {
+    spoonacularResults = await findRecipesByIngredients(ingredientNames, limit);
+  }
 
   // 5. Build a set of expiring-soon ingredient names
   const expiringSoonNames = new Set(
@@ -67,7 +75,13 @@ export async function getRecipeDetails(recipeId: number) {
     where: { id: recipeId },
   });
 
-  if (cached && cached.rawData) return cached.rawData;
+  if (cached && cached.rawData) {
+    return {
+      ...(typeof cached.rawData === 'object' && cached.rawData !== null ? cached.rawData : {}),
+      id: cached.id,
+      image: cached.image,
+    };
+  }
 
   // Fallback to Spoonacular
   const info = await getRecipeInformation(recipeId);

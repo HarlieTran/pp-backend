@@ -22,7 +22,54 @@ export async function findRecipesByIngredients(ingredientNames: string[], limit:
     throw new Error(`Spoonacular error: ${response.status} ${await response.text()}`);
   }
 
-  return response.json() as Promise<SpoonacularRecipeMatch[]>;
+  const data = await response.json() as SpoonacularRecipeMatch[];
+  return data.map(recipe => ({
+    ...recipe,
+    image: upgradeImageUrl(recipe.image)
+  }));
+}
+
+/* ──────────────────────────────────────────────
+   findRecipesComplex — Spoonacular API
+   ────────────────────────────────────────────── */
+
+export async function findRecipesComplex(ingredientNames: string[], limit: number, filter?: string) {
+  if (!SPOONACULAR_API_KEY) {
+    throw new Error("SPOONACULAR_API_KEY is not configured");
+  }
+
+  const url = new URL("/recipes/complexSearch", SPOONACULAR_BASE_URL);
+  url.searchParams.set("includeIngredients", ingredientNames.join(","));
+  // Ask for more so we can filter if needed
+  url.searchParams.set("number", String(limit * 2)); 
+  url.searchParams.set("fillIngredients", "true");
+  url.searchParams.set("addRecipeInformation", "true");
+  url.searchParams.set("ignorePantry", "true");
+  url.searchParams.set("apiKey", SPOONACULAR_API_KEY);
+
+  if (filter === "Ready to cook") {
+    url.searchParams.set("sort", "min-missing-ingredients");
+  } else {
+    url.searchParams.set("sort", "max-used-ingredients");
+  }
+
+  if (filter === "Quick eats") {
+    url.searchParams.set("maxReadyTime", "30");
+  } else if (filter === "High protein") {
+    url.searchParams.set("minProtein", "20");
+  }
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Spoonacular error: ${response.status} ${await response.text()}`);
+  }
+
+  const data = await response.json();
+  const results = data.results as SpoonacularRecipeMatch[];
+  return results.map(recipe => ({
+    ...recipe,
+    image: upgradeImageUrl(recipe.image)
+  }));
 }
 
 /* ──────────────────────────────────────────────
@@ -43,7 +90,22 @@ export async function getRecipeInformation(recipeId: number) {
     throw new Error(`Spoonacular error: ${response.status} ${await response.text()}`);
   }
 
-  return response.json() as Promise<SpoonacularRecipeInfo>;
+  const data = await response.json() as SpoonacularRecipeInfo;
+  if (data.image) {
+    data.image = upgradeImageUrl(data.image);
+  }
+  return data;
+}
+
+/* ──────────────────────────────────────────────
+   Helpers
+   ────────────────────────────────────────────── */
+
+function upgradeImageUrl(url: string): string;
+function upgradeImageUrl(url: string | undefined | null): string | undefined | null;
+function upgradeImageUrl(url: string | undefined | null) {
+  if (!url) return url;
+  return url.replace(/-\d+x\d+/, '-636x393');
 }
 
 /* ──────────────────────────────────────────────
