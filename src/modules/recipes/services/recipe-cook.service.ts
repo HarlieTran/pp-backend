@@ -40,6 +40,16 @@ function tokenizeName(v: string): string[] {
     .filter((x) => x.length > 1 && !NAME_STOPWORDS.has(x));
 }
 
+const ALIAS_MAP: Record<string, string> = {
+  "parmigiano": "parmesan",
+  "reggiano": "parmesan",
+  "cilantro": "coriander",
+  "aubergine": "eggplant",
+  "courgette": "zucchini",
+  "scallion": "green onion",
+  "spring onion": "green onion",
+};
+
 function scoreNameMatch(ingredientName: string, pantryName: string): number {
   const a = normText(ingredientName);
   const b = normText(pantryName);
@@ -47,8 +57,13 @@ function scoreNameMatch(ingredientName: string, pantryName: string): number {
   if (a === b) return 100;
   if (a.includes(b) || b.includes(a)) return 70;
 
-  const ta = tokenizeName(a);
-  const tb = tokenizeName(b);
+  let ta = tokenizeName(a);
+  let tb = tokenizeName(b);
+  
+  // Apply aliases
+  ta = ta.map(t => ALIAS_MAP[t] || t);
+  tb = tb.map(t => ALIAS_MAP[t] || t);
+
   if (ta.length === 0 || tb.length === 0) return 0;
 
   let overlap = 0;
